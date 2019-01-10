@@ -7,6 +7,7 @@ const header = require("gulp-header");
 const plumber = require("gulp-plumber");
 const rename = require("gulp-rename");
 const sass = require("gulp-sass");
+const uglify = require("gulp-uglify");
 const pkg = require('./package.json');
 
 // Set the banner content
@@ -29,12 +30,36 @@ gulp.task('vendor', function(cb) {
     ])
     .pipe(gulp.dest('./vendor/bootstrap'))
 
+  // Font Awesome
+  gulp.src([
+      './node_modules/@fortawesome/**/*',
+    ])
+    .pipe(gulp.dest('./vendor'))
+
   // jQuery
   gulp.src([
       './node_modules/jquery/dist/*',
       '!./node_modules/jquery/dist/core.js'
     ])
     .pipe(gulp.dest('./vendor/jquery'))
+
+  // jQuery Easing
+  gulp.src([
+      './node_modules/jquery.easing/*.js'
+    ])
+    .pipe(gulp.dest('./vendor/jquery-easing'))
+
+  // Magnific Popup
+  gulp.src([
+      './node_modules/magnific-popup/dist/*'
+    ])
+    .pipe(gulp.dest('./vendor/magnific-popup'))
+
+  // Scrollreveal
+  gulp.src([
+      './node_modules/scrollreveal/dist/*.js'
+    ])
+    .pipe(gulp.dest('./vendor/scrollreveal'))
 
   cb();
 
@@ -65,8 +90,29 @@ function css() {
     .pipe(browsersync.stream());
 }
 
+// JS task
+function js() {
+  return gulp
+    .src([
+      './js/*.js',
+      '!./js/*.min.js',
+      '!./js/contact_me.js',
+      '!./js/jqBootstrapValidation.js'
+    ])
+    .pipe(uglify())
+    .pipe(header(banner, {
+      pkg: pkg
+    }))
+    .pipe(rename({
+      suffix: '.min'
+    }))
+    .pipe(gulp.dest('./js'))
+    .pipe(browsersync.stream());
+}
+
 // Tasks
 gulp.task("css", css);
+gulp.task("js", js);
 
 // BrowserSync
 function browserSync(done) {
@@ -87,10 +133,11 @@ function browserSyncReload(done) {
 // Watch files
 function watchFiles() {
   gulp.watch("./scss/**/*", css);
+  gulp.watch(["./js/**/*.js", "!./js/*.min.js"], js);
   gulp.watch("./**/*.html", browserSyncReload);
 }
 
-gulp.task("default", gulp.parallel('vendor', css));
+gulp.task("default", gulp.parallel('vendor', css, js));
 
 // dev task
 gulp.task("dev", gulp.parallel(watchFiles, browserSync));
